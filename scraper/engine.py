@@ -31,6 +31,36 @@ class DistributionEngine:
             total += float(val)
         return round(total, 2)
 
+    async def refresh_ranks_from_redis(self):
+        """
+        Fast recalculation of ranks/percentiles from current Redis distributions.
+        Bypasses SQL to minimize load.
+        """
+        logger.info("Starting rank refresh from Redis distributions...")
+        # Get all keys matching dist:*
+        keys = await redis_client.client.keys("dist:*")
+
+        for key in keys:
+            # key is like "dist:A00:nationwide"
+            # We want to extract block and scope
+            parts = key.split(":")
+            if len(parts) != 3:
+                continue
+
+            block, scope = parts[1], parts[2]
+
+            # 1. Get distribution
+            counts_raw = await redis_client.client.hgetall(key)
+            if not counts_raw:
+                continue
+
+            counts = {k: int(v) for k, v in counts_raw.items()}
+
+            # 2. Re-save with rank/percentile calculations
+            await self._save_distribution(block, scope, counts)
+
+        logger.info("Rank refresh complete.")
+
     async def update_all_distributions(self, batch_size: int = 10000):
         """
         Memory-safe recalculation: Processes records in chunks to avoid OOM.
