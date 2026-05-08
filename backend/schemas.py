@@ -2,6 +2,7 @@ from typing import List, Optional
 
 from pydantic import BaseModel
 
+
 class ScoreResponse(BaseModel):
     math: Optional[float]
     literature: Optional[float]
@@ -13,11 +14,13 @@ class ScoreResponse(BaseModel):
     geography: Optional[float]
     civic_education: Optional[float]
 
+
 class RankInfo(BaseModel):
     score: float
     rank: int
     total_candidates: int
     percentile: float
+
 
 class BlockInfo(BaseModel):
     block: str
@@ -25,6 +28,7 @@ class BlockInfo(BaseModel):
     nationwide: RankInfo
     regional: RankInfo
     provincial: RankInfo
+
 
 class CandidateResponse(BaseModel):
     candidate_id: str

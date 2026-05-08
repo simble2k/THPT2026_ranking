@@ -1,23 +1,19 @@
 import asyncio
 import logging
-import os
 from typing import Any, Dict, List, Optional
 
 import aiohttp
-from sqlalchemy import select, update
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from .config import settings
-from .database import AsyncSessionLocal, engine
-from .models import ExamScore, Province
-from .redis_client import redis_client
+from .database import AsyncSessionLocal
+from .models import ExamScore
 
 # Structured Logging
 logging.basicConfig(
-    level=logging.INFO,
-    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
 )
 logger = logging.getLogger("scraper")
+
 
 class ExamScraper:
     def __init__(self, base_url: str, concurrency: int = 10):
@@ -48,7 +44,9 @@ class ExamScraper:
                         elif response.status == 404:
                             return None
                         else:
-                            logger.warning(f"Status {response.status} for {candidate_id}")
+                            logger.warning(
+                                f"Status {response.status} for {candidate_id}"
+                            )
                 except Exception as e:
                     logger.error(
                         f"Attempt {attempt + 1} failed for {candidate_id}: {e}"
@@ -68,9 +66,9 @@ class ExamScraper:
             "sinh_hoc": "biology",
             "lich_su": "history",
             "dia_li": "geography",
-            "gdcd": "civic_education"
+            "gdcd": "civic_education",
         }
-        
+
         parsed = {"candidate_id": candidate_id, "province_code": candidate_id[:2]}
         for key, field in mapping.items():
             val = raw_data.get(key)
@@ -93,43 +91,55 @@ class ExamScraper:
         # Will be implemented in Phase 4
         pass
 
-    async def run(self, province_codes: List[str], range_start: int = 1, range_end: int = 999999, max_consecutive_misses: int = 100):
+    async def run(
+        self,
+        province_codes: List[str],
+        range_start: int = 1,
+        range_end: int = 999999,
+        max_consecutive_misses: int = 100,
+    ):
         for p_code in province_codes:
             logger.info(f"Scraping province {p_code}")
             batch = []
             consecutive_misses = 0
-            
+
             for i in range(range_start, range_end + 1):
                 candidate_id = f"{p_code}{i:06d}"
                 score = await self.fetch_score(candidate_id)
-                
+
                 if score:
                     batch.append(score)
-                    consecutive_misses = 0 # Reset misses on success
+                    consecutive_misses = 0  # Reset misses on success
                 else:
                     consecutive_misses += 1
-                
+
                 if len(batch) >= 100:
                     await self.save_to_db(batch)
                     logger.info(f"Saved batch of {len(batch)} for {p_code}")
                     batch = []
-                
+
                 # Termination Heuristic: If we hit many consecutive 404s, move to next province
                 if consecutive_misses >= max_consecutive_misses:
-                    logger.info(f"Hit {consecutive_misses} consecutive misses for province {p_code}. Moving on.")
+                    logger.info(
+                        f"Hit {consecutive_misses} consecutive misses for province {p_code}. Moving on."
+                    )
                     break
 
             if batch:
                 await self.save_to_db(batch)
+
 
 async def main():
     # Example usage
     # VnExpress template: https://diemthi.vnexpress.net/index/get-score?sbd={sbd}&year=2025
     # For testing, we might want to use a mock server or just test with a few IDs
     base_url = "https://diemthi.vnexpress.net/index/get-score?sbd={sbd}&year=2025"
-    async with ExamScraper(base_url, concurrency=settings.SCRAPE_CONCURRENCY) as scraper:
+    async with ExamScraper(
+        base_url, concurrency=settings.SCRAPE_CONCURRENCY
+    ) as scraper:
         # Test with Hà Nội (01)
         await scraper.run(["01"], range_start=1, range_end=100)
+
 
 if __name__ == "__main__":
     asyncio.run(main())

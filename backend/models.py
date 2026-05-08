@@ -1,6 +1,7 @@
-from sqlalchemy import Column, String, Numeric, ForeignKey
+from sqlalchemy import Column, ForeignKey, Numeric, String
 
 from .core.database import Base
+
 
 class Province(Base):
     __tablename__ = "provinces"
@@ -8,6 +9,7 @@ class Province(Base):
     code = Column(String(10), primary_key=True)
     name = Column(String(100), nullable=False)
     region = Column(String(50), nullable=False)
+
 
 class ExamScore(Base):
     __tablename__ = "exam_scores"
