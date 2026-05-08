@@ -1,7 +1,7 @@
 import asyncio
 import logging
-from typing import List, Dict, Any
-from sqlalchemy import select, func
+from typing import Dict
+from sqlalchemy import select
 from .database import AsyncSessionLocal
 from .models import ExamScore, Province
 from .redis_client import redis_client
@@ -34,7 +34,10 @@ class DistributionEngine:
         """
         async with AsyncSessionLocal() as session:
             # Structure: data[block][scope][score] = count
-            distributions = {block: {"nationwide": {}, "regions": {}, "provinces": {}} for block in BLOCKS}
+            distributions = {
+                block: {"nationwide": {}, "regions": {}, "provinces": {}}
+                for block in BLOCKS
+            }
 
             offset = 0
             while True:

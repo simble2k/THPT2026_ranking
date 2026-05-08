@@ -2,7 +2,8 @@ from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sess
 from sqlalchemy.orm import declarative_base
 from .config import settings
 
-# Create async engine with connection pooling optimized for serverless (minimal pool size if needed, or using a proxy)
+# Create async engine with connection pooling optimized for serverless 
+# (minimal pool size if needed, or using a proxy)
 # For Vercel Serverless, we should be careful with connection counts.
 engine = create_async_engine(
     settings.DATABASE_URL,

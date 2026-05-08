@@ -1,15 +1,14 @@
-import asyncio
 import aiohttp
+import asyncio
 import logging
-import json
 import os
-from typing import List, Dict, Any, Optional
-from sqlalchemy.ext.asyncio import AsyncSession
+from typing import Any, Dict, List, Optional
 from sqlalchemy import select, update
+from sqlalchemy.ext.asyncio import AsyncSession
+from .config import settings
 from .database import AsyncSessionLocal, engine
 from .models import ExamScore, Province
 from .redis_client import redis_client
-from .config import settings
 
 # Structured Logging
 logging.basicConfig(

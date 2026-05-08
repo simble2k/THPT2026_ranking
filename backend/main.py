@@ -1,13 +1,12 @@
 import asyncio
-from fastapi import FastAPI, HTTPException, Depends, Response
+from fastapi import Depends, FastAPI, HTTPException, Response
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
+from sqlalchemy.ext.asyncio import AsyncSession
 from .core.database import get_db
-from .core.redis_client import get_redis, RedisClient
+from .core.redis_client import RedisClient, get_redis
 from .models import ExamScore, Province
-from .schemas import CandidateResponse, ScoreResponse, BlockInfo, RankInfo
-from typing import List
+from .schemas import BlockInfo, CandidateResponse, RankInfo, ScoreResponse
 
 app = FastAPI(title="THPT Score Lookup API")
 
@@ -26,13 +25,15 @@ BLOCKS = {
     "D01": ["math", "literature", "foreign_language"],
 }
 
-async def fetch_scope_rank(redis: RedisClient, block: str, scope: str, score: float) -> RankInfo:
+async def fetch_scope_rank(
+    redis: RedisClient, block: str, scope: str, score: float
+) -> RankInfo:
     score_str = f"{score:.2f}"
     # Gather all 3 lookups concurrently to minimize round-trip latency
     rank, percentile, total = await asyncio.gather(
         redis.hget(f"rank:{block}:{scope}", score_str),
         redis.hget(f"pct:{block}:{scope}", score_str),
-        redis.get(f"total:{block}:{scope}")
+        redis.get(f"total:{block}:{scope}"),
     )
     
     return RankInfo(
@@ -50,10 +51,16 @@ async def get_candidate_scores(
     redis: RedisClient = Depends(get_redis)
 ):
     # Set Cache-Control for edge delivery (1 day)
-    response.headers["Cache-Control"] = "public, s-maxage=86400, stale-while-revalidate=3600"
+    response.headers["Cache-Control"] = (
+        "public, s-maxage=86400, stale-while-revalidate=3600"
+    )
 
     # 1. Fetch scores and province
-    stmt = select(ExamScore, Province).join(Province, ExamScore.province_code == Province.code).where(ExamScore.candidate_id == candidate_id)
+    stmt = (
+        select(ExamScore, Province)
+        .join(Province, ExamScore.province_code == Province.code)
+        .where(ExamScore.candidate_id == candidate_id)
+    )
     result = await db.execute(stmt)
     data = result.first()
     
@@ -63,7 +70,9 @@ async def get_candidate_scores(
     score_obj, province_obj = data
     
     # 2. Prepare scores
-    scores_dict = {field: getattr(score_obj, field) for field in ScoreResponse.__fields__}
+    scores_dict = {
+        field: getattr(score_obj, field) for field in ScoreResponse.__fields__
+    }
     
     # 3. Compute blocks
     blocks_info = []
@@ -86,9 +95,17 @@ async def get_candidate_scores(
             active_blocks.append((block, total_score))
             
             # Queue 3 scopes for this block
-            all_rank_tasks.append(fetch_scope_rank(redis, block, "nationwide", total_score))
-            all_rank_tasks.append(fetch_scope_rank(redis, block, f"region_{province_obj.region}", total_score))
-            all_rank_tasks.append(fetch_scope_rank(redis, block, f"prov_{province_obj.code}", total_score))
+            all_rank_tasks.append(
+                fetch_scope_rank(redis, block, "nationwide", total_score)
+            )
+            all_rank_tasks.append(
+                fetch_scope_rank(
+                    redis, block, f"region_{province_obj.region}", total_score
+                )
+            )
+            all_rank_tasks.append(
+                fetch_scope_rank(redis, block, f"prov_{province_obj.code}", total_score)
+            )
             
     # Resolve all Redis calls in a single batch of concurrent tasks
     all_ranks = await asyncio.gather(*all_rank_tasks)
