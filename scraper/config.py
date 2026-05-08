@@ -10,6 +10,7 @@ class Settings(BaseSettings):
     # Scraper Settings
     SCRAPE_CONCURRENCY: int = 10
     SCRAPE_RETRY_LIMIT: int = 3
+    SCRAPE_MAX_MISSES: int = 100
 
     model_config = SettingsConfigDict(env_file=".env", extra="ignore")
 

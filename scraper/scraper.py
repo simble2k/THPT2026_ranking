@@ -114,9 +114,14 @@ class ExamScraper:
         base_delay = 1.0
         self.stats.total_scraped += 1
 
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
+            "Referer": "https://diemthi.vnexpress.net/",
+        }
+
         for attempt in range(settings.SCRAPE_RETRY_LIMIT):
             try:
-                async with self.session.get(url) as response:
+                async with self.session.get(url, headers=headers) as response:
                     if response.status == 200:
                         text = await response.text()
                         if (
@@ -148,7 +153,7 @@ class ExamScraper:
                     elif response.status == 429:
                         self.stats.total_errors += 1
                         logger.warning("Rate limited (429). Increasing delay.")
-                        await asyncio.sleep(10 * (attempt + 1))
+                        await asyncio.sleep(20 * (attempt + 1))
                     else:
                         self.stats.total_errors += 1
                         logger.warning(
@@ -156,9 +161,12 @@ class ExamScraper:
                         )
             except Exception as e:
                 self.stats.total_errors += 1
+                if attempt == settings.SCRAPE_RETRY_LIMIT - 1:
+                    logger.critical(f"PERMANENT FAILURE for {candidate_id}: {e}")
+                    raise
                 logger.error(f"Attempt {attempt + 1} failed for {candidate_id}: {e}")
 
-            delay = min(base_delay * (2**attempt) + random.uniform(0, 5), 30.0)
+            delay = min(base_delay * (2**attempt) + random.uniform(0, 5), 60.0)
             await asyncio.sleep(delay)
 
         return None
@@ -291,6 +299,10 @@ class ExamScraper:
 
                 valid_scores = [res for res in results if res is not None]
 
+                # Mandatory sleep to prevent IP blocking
+                sleep_time = random.uniform(1.0, 3.0)
+                await asyncio.sleep(sleep_time)
+
                 if valid_scores:
                     await self.save_to_db(valid_scores)
                     await self.update_redis_distributions(valid_scores)
@@ -300,7 +312,7 @@ class ExamScraper:
                     )
                     consecutive_misses = 0
                 else:
-                    consecutive_misses += self.concurrency
+                    consecutive_misses += len(batch_tasks)
 
                 self.stats.log_stats(p_code)
                 i += self.concurrency
