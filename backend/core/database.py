@@ -1,6 +1,7 @@
 from sqlalchemy.ext.asyncio import create_async_engine, AsyncSession, async_sessionmaker
 from sqlalchemy.orm import declarative_base
 from sqlalchemy.pool import NullPool
+
 from .config import settings
 
 # Use NullPool for serverless (Vercel) to avoid connection leaks

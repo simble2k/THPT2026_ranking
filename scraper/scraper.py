@@ -1,10 +1,12 @@
-import aiohttp
 import asyncio
 import logging
 import os
 from typing import Any, Dict, List, Optional
+
+import aiohttp
 from sqlalchemy import select, update
 from sqlalchemy.ext.asyncio import AsyncSession
+
 from .config import settings
 from .database import AsyncSessionLocal, engine
 from .models import ExamScore, Province
@@ -48,7 +50,9 @@ class ExamScraper:
                         else:
                             logger.warning(f"Status {response.status} for {candidate_id}")
                 except Exception as e:
-                    logger.error(f"Attempt {attempt + 1} failed for {candidate_id}: {e}")
+                    logger.error(
+                        f"Attempt {attempt + 1} failed for {candidate_id}: {e}"
+                    )
                     await asyncio.sleep(1)
             return None
 

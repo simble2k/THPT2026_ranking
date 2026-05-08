@@ -1,6 +1,7 @@
-from backend.main import app
-from httpx import AsyncClient
 import pytest
+from httpx import AsyncClient
+
+from backend.main import app
 
 @pytest.mark.asyncio
 async def test_health_check():

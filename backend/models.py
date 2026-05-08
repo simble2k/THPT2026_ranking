@@ -1,4 +1,5 @@
 from sqlalchemy import Column, String, Numeric, ForeignKey
+
 from .core.database import Base
 
 class Province(Base):

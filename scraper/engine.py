@@ -1,7 +1,9 @@
 import asyncio
 import logging
 from typing import Dict
+
 from sqlalchemy import select
+
 from .database import AsyncSessionLocal
 from .models import ExamScore, Province
 from .redis_client import redis_client
