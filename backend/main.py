@@ -12,6 +12,13 @@ from .schemas import BlockInfo, CandidateResponse, RankInfo, ScoreResponse
 
 app = FastAPI(title="THPT Score Lookup API")
 
+
+@app.get("/")
+@app.get("/health")
+async def health_check():
+    return {"status": "ok"}
+
+
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -133,8 +140,3 @@ async def get_candidate_scores(
         scores=ScoreResponse(**scores_dict),
         blocks=blocks_info,
     )
-
-
-@app.get("/health")
-async def health_check():
-    return {"status": "ok"}

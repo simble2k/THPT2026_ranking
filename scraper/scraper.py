@@ -118,10 +118,12 @@ class ExamScraper:
                     logger.info(f"Saved batch of {len(batch)} for {p_code}")
                     batch = []
 
-                # Termination Heuristic: If we hit many consecutive 404s, move to next province
+                # Termination Heuristic: If we hit many consecutive 404s,
+                # move to next province
                 if consecutive_misses >= max_consecutive_misses:
                     logger.info(
-                        f"Hit {consecutive_misses} consecutive misses for province {p_code}. Moving on."
+                        f"Hit {consecutive_misses} consecutive misses "
+                        f"for province {p_code}. Moving on."
                     )
                     break
 
