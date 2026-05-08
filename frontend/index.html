@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tra cứu điểm thi THPT 2026</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Tra cứu điểm thi THPT 2026</h1>
+            <p>Phân tích thứ hạng và phần trăm xếp loại toàn quốc</p>
+        </header>
+
+        <main>
+            <section class="search-section">
+                <form id="search-form">
+                    <input type="text" id="candidate-id" placeholder="Nhập Số báo danh (8 chữ số)" required pattern="\d{8}">
+                    <button type="submit">Tra cứu</button>
+                </form>
+            </section>
+
+            <div id="loading" class="hidden">Đang tải dữ liệu...</div>
+            <div id="error" class="hidden"></div>
+
+            <section id="result-section" class="hidden">
+                <div class="candidate-info">
+                    <h2 id="display-id"></h2>
+                    <p id="display-location"></p>
+                </div>
+
+                <div class="scores-grid" id="scores-grid">
+                    <!-- Scores will be injected here -->
+                </div>
+
+                <div class="tabs">
+                    <button class="tab-btn active" data-tab="nationwide">Toàn quốc</button>
+                    <button class="tab-btn" data-tab="regional">Khu vực</button>
+                    <button class="tab-btn" data-tab="provincial">Tỉnh thành</button>
+                </div>
+
+                <div class="tab-content" id="ranking-content">
+                    <!-- Ranking info will be injected here -->
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>&copy; 2026 THPT Score Analysis</p>
+        </footer>
+    </div>
+    <script src="app.js"></script>
+</body>
+</html>

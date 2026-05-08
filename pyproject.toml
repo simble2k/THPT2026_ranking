@@ -1,0 +1,16 @@
+[tool.ruff]
+line-length = 88
+select = ["E", "F", "I"]
+fixable = ["ALL"]
+exclude = [
+    ".git",
+    "__pycache__",
+    "build",
+    "dist",
+    "venv",
+]
+
+[tool.black]
+line-length = 88
+target-version = ['py311']
+include = '\.pyi?$'
