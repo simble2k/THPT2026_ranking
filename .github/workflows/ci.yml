@@ -1,34 +1,46 @@
 name: CI
 
-on:
-  push:
-    branches: [ main ]
-  pull_request:
-    branches: [ main ]
+on: [push, pull_request]
+
+defaults:
+  run:
+    shell: bash
 
 jobs:
-  lint-and-test:
-    runs-on: ubuntu-latest
+  build:
+    name: ${{ matrix.platform.name }} (Python ${{ matrix.python-version }})
+    runs-on: ${{ matrix.platform.os }}
+
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+        - { name: Windows, os: windows-latest }
+        - { name: Linux,   os: ubuntu-latest  }
+        - { name: macOS,   os: macos-latest   }
+        python-version: ["3.11", "3.12"]
+
     steps:
-      - uses: actions/checkout@v3
+    - name: Checkout
+      uses: actions/checkout@v4
 
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.11'
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v5
+      with:
+        python-version: ${{ matrix.python-version }}
+        cache: 'pip'
 
-      - name: Install dependencies
-        run: |
-          python -m pip install --upgrade pip
-          pip install ruff black pytest
-          pip install -r backend/requirements.txt
-          pip install -r scraper/requirements.txt
+    - name: Install Dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install ruff black pytest
+        if [ -f backend/requirements.txt ]; then pip install -r backend/requirements.txt; fi
+        if [ -f scraper/requirements.txt ]; then pip install -r scraper/requirements.txt; fi
 
-      - name: Lint with Ruff
-        run: ruff check .
+    - name: Lint
+      run: |
+        ruff check .
+        black --check .
 
-      - name: Check formatting with Black
-        run: black --check .
-
-      - name: Run tests
-        run: pytest
+    - name: Test
+      run: pytest
