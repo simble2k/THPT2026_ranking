@@ -1,11 +1,10 @@
 from unittest.mock import AsyncMock, MagicMock
 
 import pytest
+from api.index import app
+from core.database import get_db
+from core.redis_client import get_redis
 from httpx import ASGITransport, AsyncClient
-
-from backend.core.database import get_db
-from backend.core.redis_client import get_redis
-from backend.main import app
 
 
 # Mock Database Dependency
