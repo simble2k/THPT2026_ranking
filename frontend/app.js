@@ -1,4 +1,4 @@
-const API_BASE = window.location.hostname === 'localhost' ? 'http://localhost:8000' : '';
+const API_BASE = 'https://thpt-2026-ranking.vercel.app/';
 
 const searchForm = document.getElementById('search-form');
 const resultSection = document.getElementById('result-section');
