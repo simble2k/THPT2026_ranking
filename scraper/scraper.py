@@ -2,6 +2,7 @@ import asyncio
 import json
 import logging
 import random
+import sys
 import time
 from pathlib import Path
 from typing import Any, Dict, List, Optional
@@ -15,12 +16,21 @@ from .engine import BLOCKS, DistributionEngine
 from .models import ExamScore, Province
 from .redis_client import redis_client
 
-# Structured Logging
+# Structured Logging with UTF-8 support
 logging.basicConfig(
     level=logging.INFO,
     format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
-    handlers=[logging.StreamHandler(), logging.FileHandler("scraper.log")],
+    handlers=[
+        logging.StreamHandler(sys.stdout),
+        logging.FileHandler("scraper.log", encoding="utf-8"),
+    ],
 )
+# Force UTF-8 for console if possible (Python 3.7+)
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(encoding="utf-8")
+    except Exception:
+        pass
 logger = logging.getLogger("scraper")
 
 CHECKPOINT_FILE = Path("scraper_checkpoint.json")
@@ -382,10 +392,23 @@ async def main():
             refresh_task = asyncio.create_task(periodic_refresh())
             try:
                 await scraper.run(province_codes)
+            except (asyncio.CancelledError, KeyboardInterrupt):
+                logger.info("Main scraper loop interrupted.")
             finally:
                 refresh_task.cancel()
+                try:
+                    await asyncio.gather(refresh_task, return_exceptions=True)
+                except Exception:
+                    pass
+
+                logger.info("Performing final rank refresh before shutdown...")
                 engine = DistributionEngine()
-                await engine.refresh_ranks_from_redis()
+                try:
+                    # Run the final refresh in a way that's less likely to
+                    # be cut off immediately
+                    await engine.refresh_ranks_from_redis()
+                except Exception as e:
+                    logger.error(f"Final rank refresh failed: {e}")
 
     elif args.command == "refresh":
         engine = DistributionEngine()
