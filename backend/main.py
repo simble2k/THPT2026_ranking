@@ -5,11 +5,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from core.database import get_db
-from core.redis_client import RedisClient, get_redis
-from models import ExamScore, Province
-from schemas import BlockInfo, CandidateResponse, RankInfo, ScoreResponse
-
+from .core.database import get_db
+from .core.redis_client import RedisClient, get_redis
+from .models import ExamScore, Province
+from .schemas import BlockInfo, CandidateResponse, RankInfo, ScoreResponse
 
 app = FastAPI(title="THPT Score Lookup API")
 
