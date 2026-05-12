@@ -1,4 +1,4 @@
-const API_BASE = 'https://thpt-2026-ranking.vercel.app/';
+const API_BASE = 'https://thpt-2026-ranking.vercel.app';
 
 const searchForm = document.getElementById('search-form');
 const resultSection = document.getElementById('result-section');
@@ -24,6 +24,7 @@ searchForm.addEventListener('submit', async (e) => {
         renderResult(currentData);
         hideLoading();
     } catch (err) {
+        console.error('Fetch error:', err);
         showError(err.message);
     }
 });
