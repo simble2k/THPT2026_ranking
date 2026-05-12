@@ -1,3 +1,14 @@
+[project]
+name = "thpt2026-ranking"
+version = "0.1.0"
+description = "Vietnamese National High School Exam Score Lookup & Ranking Platform"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[tool.setuptools.packages.find]
+include = ["backend*", "scraper*"]
+
 [tool.ruff]
 line-length = 88
 
