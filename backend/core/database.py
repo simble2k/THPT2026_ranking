@@ -9,6 +9,10 @@ from .config import settings
 engine = create_async_engine(
     settings.DATABASE_URL,
     poolclass=NullPool,
+    connect_args={
+        "statement_cache_size": 0,
+        "prepared_statement_cache_size": 0,
+    },
 )
 
 AsyncSessionLocal = async_sessionmaker(

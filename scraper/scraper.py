@@ -287,13 +287,46 @@ class ExamScraper:
         except Exception as e:
             logger.error(f"Redis distribution update error: {e}")
 
+    async def _worker(self, queue: asyncio.Queue, p_code: str):
+        """Consumer worker that saves scores to DB and Redis in background."""
+        batch = []
+        last_save_time = time.time()
+
+        while True:
+            try:
+                # Wait for a score from the producer
+                score = await queue.get()
+                if score is None:  # Sentinel value to exit
+                    if batch:
+                        await self.save_to_db(batch)
+                        await self.update_redis_distributions(batch)
+                    queue.task_done()
+                    break
+
+                batch.append(score)
+
+                # Save in chunks of 50 or every 5 seconds
+                if len(batch) >= 50 or (time.time() - last_save_time > 5):
+                    await self.save_to_db(batch)
+                    await self.update_redis_distributions(batch)
+                    batch = []
+                    last_save_time = time.time()
+
+                queue.task_done()
+            except Exception as e:
+                logger.error(f"Worker error: {e}")
+                await asyncio.sleep(1)
+
     async def run(self, province_codes: List[str]):
         checkpoint = CheckpointManager.load()
         start_prov_idx = checkpoint.get("province_idx", 0)
 
         for idx in range(start_prov_idx, len(province_codes)):
             p_code = province_codes[idx]
-            logger.info(f"--- Starting scrape for province {p_code} ---")
+            logger.info(f"--- Starting optimized scrape for province {p_code} ---")
+
+            queue = asyncio.Queue(maxsize=500)
+            worker_task = asyncio.create_task(self._worker(queue, p_code))
 
             consecutive_misses = 0
             i = checkpoint.get("last_id_offset", 1) if idx == start_prov_idx else 1
@@ -308,20 +341,17 @@ class ExamScraper:
                     results = await asyncio.gather(*batch_tasks)
                 except Exception as e:
                     logger.error(f"Batch execution error: {e}")
-                    await asyncio.sleep(5)
+                    await asyncio.sleep(2)
                     continue
 
                 valid_scores = [res for res in results if res is not None]
 
-                # Mandatory sleep to prevent IP blocking
-                sleep_time = random.uniform(1.0, 3.0)
-                await asyncio.sleep(sleep_time)
-
                 if valid_scores:
-                    await self.save_to_db(valid_scores)
-                    await self.update_redis_distributions(valid_scores)
+                    for score in valid_scores:
+                        await queue.put(score)
+
                     logger.info(
-                        f"[{p_code}] Saved batch of {len(valid_scores)}. "
+                        f"[{p_code}] Queued {len(valid_scores)}. "
                         f"Reached ID {i + self.concurrency - 1}"
                     )
                     consecutive_misses = 0
@@ -331,6 +361,13 @@ class ExamScraper:
                 self.stats.log_stats(p_code)
                 i += self.concurrency
                 CheckpointManager.save(idx, i)
+
+                # Small jittered delay between batches to be nice to the server
+                await asyncio.sleep(random.uniform(0.1, 0.5))
+
+            # Finish up province
+            await queue.put(None)
+            await worker_task
 
             logger.info(
                 f"Hit {consecutive_misses} consecutive misses. "
