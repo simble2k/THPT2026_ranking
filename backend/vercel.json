@@ -1,19 +1,13 @@
 {
-  "devCommand": "uvicorn main:app --reload",
-  "builds": [
-    {
-      "src": "main.py",
-      "use": "@vercel/python"
-    }
-  ],
-  "routes": [
-    {
-      "src": "/api/(.*)",
-      "dest": "main.py"
-    },
-    {
-      "src": "/health",
-      "dest": "main.py"
-    }
-  ]
+     "version": 2,
+     "rewrites": [
+       {
+       "source": "/api/(.*)",
+       "destination": "main.py"
+     },
+     {
+       "source": "/health",
+       "destination": "main.py"
+     }
+   ]
 }
