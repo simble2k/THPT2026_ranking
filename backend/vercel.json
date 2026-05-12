@@ -1,13 +1,19 @@
 {
-     "version": 2,
-     "rewrites": [
-       {
-       "source": "/api/(.*)",
-       "destination": "main.py"
-     },
-     {
-       "source": "/health",
-       "destination": "main.py"
-     }
-   ]
+  "version": 2,
+  "builds": [
+    {
+      "src": "main.py",
+      "use": "@vercel/python"
+    }
+  ],
+  "rewrites": [
+    {
+      "source": "/api/(.*)",
+      "destination": "main.py"
+    },
+    {
+      "source": "/health",
+      "destination": "main.py"
+    }
+  ]
 }

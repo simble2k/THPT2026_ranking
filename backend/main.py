@@ -10,6 +10,7 @@ from core.redis_client import RedisClient, get_redis
 from models import ExamScore, Province
 from schemas import BlockInfo, CandidateResponse, RankInfo, ScoreResponse
 
+
 app = FastAPI(title="THPT Score Lookup API")
 
 

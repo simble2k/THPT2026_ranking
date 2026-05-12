@@ -1,6 +1,6 @@
 from sqlalchemy import Column, ForeignKey, Numeric, String
 
-from .core.database import Base
+from core.database import Base
 
 
 class Province(Base):
